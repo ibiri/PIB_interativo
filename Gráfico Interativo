@@ -1,0 +1,56 @@
+# Bibliotecas necessárias
+if (!require("tidyverse")) install.packages("tidyverse")
+if (!require("gifski")) install.packages("gifski")
+if (!require("gganimate")) install.packages("gganimate")
+
+#----------------------------------------------
+
+x <- 2003:2021
+y <- c(25.862, 31.091, 33.981, 39.933, 43.480, 48.115, 50.560, 60.877, 70.734, 72.243, 83.051, 86.669, 86.568, 89.040, 93.240, 100.109, 108.181, 116.019, 131.531)
+dados <- data.frame(x = x, PIB = y)  # Corrigindo o nome da variável
+
+## Função que cria um gráfico de linhas animado
+graph_animated <- function(dados, x, y, cor_da_linha = "darkblue", titulo = " ", legenda_x = "x", legenda_y = "y"){
+  # Defina o intervalo desejado para mostrar os anos (a cada 4 anos)
+  intervalo_anos <- seq(min(dados$x), max(dados$x) + 1, by = 2)  # Adicionado +1 para incluir o ano de 2021
+  
+  library(tidyverse)
+  library(gifski)
+  library(gganimate)
+  
+  grafico <- ggplot(dados) + 
+    theme(
+      text = element_text(size = 17),
+      plot.background = element_rect(fill = "white", color = NA)
+    ) + 
+    ggtitle(titulo) + 
+    geom_line(aes(x = {{x}}, y = {{y}}), size = 2, colour = cor_da_linha) + 
+    labs(x = legenda_x, y = legenda_y) + 
+    transition_reveal({{x}})
+  
+  # Adiciona o rótulo "PIB" à ponta do gráfico
+  grafico <- grafico +
+    enter_fade() +
+    geom_text(aes(label = "PIB Amazonas", x = {{x}}, y = {{y}}), vjust = -1, hjust = 1.3, size = 6, color = cor_da_linha) 
+    
+    # Adiciona os valores durante o percurso
+    grafico <- grafico +
+    geom_label(aes(label = sprintf("%.2f", {{y}}), x = {{x}}, y = {{y}}), vjust = -0.4, hjust = 0.5, size = 5, color = cor_da_linha,
+               fill = "white", label.padding = unit(0.5, "lines"), label.r = unit(0.1, "lines"))
+  
+  # Define os pontos de quebra no eixo x (a cada 4 anos)
+  grafico <- grafico +
+    scale_x_continuous(breaks = intervalo_anos)
+  
+  return(grafico)
+}
+
+# Exemplo - dados PIB -----------------------------------------------------
+
+## Exemplo de uso da função
+img <- graph_animated(dados, x = x, y = PIB, cor_da_linha = "blue", titulo = "PIB do Amazonas (R$ milhões) 2003 a 2021", 
+                      legenda_x = "Ano", legenda_y = "PIB (R$ milhões)")
+img
+
+# Salva o gif gerado na pasta definida em setwd
+anim_save("teste.gif")
